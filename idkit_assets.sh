@@ -62,12 +62,10 @@ function getRegularNameOfFile() {
             else
                 echo "提示:文件名不能以下滑线结尾。"
                 getRegularNameOfFile
-                exit
             fi
         else
             echo "提示:文件名必须由小写字母或者下滑线组成。"
             getRegularNameOfFile
-            exit
         fi
     fi
 }
