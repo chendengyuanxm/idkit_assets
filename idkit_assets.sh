@@ -140,11 +140,13 @@ function checkExistOfSourceManagmentMenu() {
 function complateSourceManagmentClass() {
     while read line
     do 
-        echo "  /// $line" >> $SourceFilePath
         # 注意小数点(转移)
         result=$(grep "$line/[A-Za-z0-9_]\+\." $TempSourcesPath)
-        # 双引号保留换行符
-        echo "$SpaceStr$result" >> $SourceFilePath
+        if [ -n "$result" ]; then 
+            echo "  /// $line" >> $SourceFilePath
+            # 双引号保留换行符
+            echo "$result" >> $SourceFilePath
+        fi
     done < $TempMenusPath
     echo "}" >> $SourceFilePath
 }
@@ -159,7 +161,7 @@ function adaptPubspecFile() {
     IFS=""
     while read line
     do  
-        # 清除空格x
+        # 清除空格
         TrimRes=$(echo $line | awk '$1=$1')
         if echo $TrimRes | grep -qE "^# assets:|^assets:"; then
             # 避免多次构建
