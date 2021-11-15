@@ -30,6 +30,7 @@ function checkStateFromFile() {
     fi
 }
 
+
 # 创建资源管理类
 function createReSourceManageClass() {
     read -p "请输入资源管理的类名:" name 
@@ -45,6 +46,7 @@ function createReSourceManageClass() {
         fi
     fi 
 }
+
 
 # 获取合格资源管理文件名(*)
 function getRegularNameOfFile() {
@@ -70,6 +72,7 @@ function getRegularNameOfFile() {
     fi
 }
 
+
 # 资源引用名转化规则
 function transformRules() {
     if echo $1 | grep -q "^[a-zA-Z]\+"; then
@@ -90,6 +93,15 @@ function transformRules() {
 }
 
 
+# 资源重名处理
+function doDuplicateName() {
+    Num=$(grep -cw "$1" $TempSourcesPath)
+    if [ $Num  -gt 0 ]; then 
+        TempSourceName="$1_$(date +%s)"
+    fi
+}
+
+
 # 获取文件夹路径和文件路径
 function getAllPathOfSourceManagmentMenu() {
     for file in `ls $1` 
@@ -101,6 +113,7 @@ function getAllPathOfSourceManagmentMenu() {
         else
             name=$(echo $file | cut -d . -f 1)
             transformRules $name
+            doDuplicateName $TempSourceName
             echo "  static String $TempSourceName = '$FilePath';" >> $TempSourcesPath
         fi
     done
@@ -136,6 +149,7 @@ function complateSourceManagmentClass() {
     echo "}" >> $SourceFilePath
 }
 
+
 # 改写 pubspec.yaml 文件
 function adaptPubspecFile() {
     checkStateFromFile $TempPubspecPath
@@ -166,15 +180,18 @@ function adaptPubspecFile() {
     done < $1
 }
 
+
 # 将改写的 pubspec.yaml 重定向 
 function redirectPubspec() {
     cat $TempPubspecPath > $1
 }
 
+
 # 清除临时文件
 function dismissTempFile() {
     rm -rf $1 $2 $3
 }
+
 
 # 脚本主入口
 function main() {
@@ -189,6 +206,8 @@ function main() {
     echo "|==========    Flutter资源便捷处理 -- 结束    ==========|"
     exit
 } 
+
+
 # 脚本开始
 main
 
