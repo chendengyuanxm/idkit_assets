@@ -23,7 +23,7 @@ TempSourceName=""
 
 # 判断给定文件是否存在,存在清空内容;不存在就创建
 function checkStateFromFile() {
-    if [ -f $1 ];then
+    if [ -f $1 ]; then
         :> $1
     else
         touch "$1"
@@ -33,40 +33,48 @@ function checkStateFromFile() {
 # 创建资源管理类
 function createReSourceManageClass() {
     read -p "请输入资源管理的类名:" name 
-    if echo "$name" | grep -qv '^[A-Z][A-Za-z]*$';then
-        echo "提示:类名必须由字母组成，并且首字母为大写。"
-        createReSourceManageClass
-    fi
-    echo "class $name {" > $SourceFilePath
+    if [ -z $name ]; then
+        name="IDKitAssets"
+        echo "class $name {" > $SourceFilePath
+    else
+        if echo "$name" | grep -q '^[A-Z][A-Za-z]*$'; then
+            echo "class $name {" > $SourceFilePath
+        else 
+            echo "提示:类名必须由字母组成，并且首字母为大写。"
+            createReSourceManageClass
+        fi
+    fi 
 }
 
 # 获取合格资源管理文件名(*)
 function getRegularNameOfFile() {
     read -p "请输入资源管理的文件名:" name 
-    if [ -z "$name" ];then
+    if [ -z "$name" ]; then
         name="idkit_assets"
         SourceFilePath="lib/$name.dart"
         checkStateFromFile $SourceFilePath
     else
-        if echo "$name" | grep -q '^[a-z][a-z_]*$';then
+        if echo "$name" | grep -qe '^[a-z][a-z_]*$'; then
             # 过滤名字结尾是下划线
-            if echo "$name" | grep -q '[a-z]$';then
+            if echo "$name" | grep -qe '[a-z]$'; then
                 SourceFilePath="lib/$name.dart"
                 checkStateFromFile $SourceFilePath
             else
-                echo "提示:文件名必须由小写字母或者下滑线组成。"
+                echo "提示:文件名不能以下滑线结尾。"
                 getRegularNameOfFile
+                exit
             fi
         else
             echo "提示:文件名必须由小写字母或者下滑线组成。"
             getRegularNameOfFile
+            exit
         fi
     fi
 }
 
 # 资源引用名转化规则
 function transformRules() {
-    if echo $1 | grep -q "^[a-zA-Z]\+";then
+    if echo $1 | grep -q "^[a-zA-Z]\+"; then
         # 获取所有下划线和后面的第一个内容
         ArrList=$(echo $1 | grep '_[A-Za-z0-9]\?' -o)
         Result=$1
@@ -89,7 +97,7 @@ function getAllPathOfSourceManagmentMenu() {
     for file in `ls $1` 
     do  
         FilePath=$1/$file
-        if [ -d $FilePath ];then
+        if [ -d $FilePath ]; then
             echo $FilePath >> $TempMenusPath
             getAllPathOfSourceManagmentMenu $FilePath
         else
@@ -103,7 +111,7 @@ function getAllPathOfSourceManagmentMenu() {
 
 # 判断资源文件夹是否存在
 function checkExistOfSourceManagmentMenu() {
-    if [ -d $SourceMenuPath ];then
+    if [ -d $SourceMenuPath ]; then
         checkStateFromFile $TempMenusPath
         checkStateFromFile $TempSourcesPath
         # 将资源本身写入
@@ -111,7 +119,7 @@ function checkExistOfSourceManagmentMenu() {
         getAllPathOfSourceManagmentMenu $SourceMenuPath
     else
         mkdir $SourceMenuPath
-        touch "$SourceMenuPath/readme.txt"
+        echo "欢迎使用 idkit_asset 脚本便捷处理 Flutter 项目资源。" > "$SourceMenuPath/readme.txt"
         checkExistOfSourceManagmentMenu
     fi
 }
@@ -139,9 +147,11 @@ function adaptPubspecFile() {
     IFS=""
     while read line
     do  
-        if echo $line | grep -q 'assets:$';then
+        # 清除空格x
+        TrimRes=$(echo $line | awk '$1=$1')
+        if echo $TrimRes | grep -qE "^# assets:|^assets:"; then
             # 避免多次构建
-            if [ $AssetsExit -eq 0 ];then 
+            if [ $AssetsExit -eq 0 ]; then 
                 echo "  assets:" >> $TempPubspecPath
                 while read menu
                 do
@@ -150,7 +160,7 @@ function adaptPubspecFile() {
             else
                 AssetsExit=1
             fi
-        elif echo $line | grep -qE "((.(png|webp|gif|jpeg|svg|json))|\/)$";then
+        elif echo $TrimRes | grep -qE ".(png|webp|gif|jpeg|svg|json|\/)$"; then
             continue
         else
             echo $line >> $TempPubspecPath
